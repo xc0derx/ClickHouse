@@ -105,7 +105,7 @@ $CLICKHOUSE_CLIENT -nq "
     select '<9.2: dropping>', countIf(name like '%tmp%'), countIf(name like '%.inner%') from system.tables where database = currentDatabase();
     drop table src;
     system refresh view a;"
-$CLICKHOUSE_CLIENT -nq "system wait view a;" 2>/dev/null && echo "SYSTEM WAIT VIEW failed to fail at $LINENO"
+$CLICKHOUSE_CLIENT -nq "system wait view a; -- { serverError REFRESH_FAILED }"
 $CLICKHOUSE_CLIENT -nq "
     select '<9.4: dropped>', countIf(name like '%tmp%'), countIf(name like '%.inner%') from system.tables where database = currentDatabase();"
 
@@ -154,12 +154,16 @@ do
 done
 $CLICKHOUSE_CLIENT -nq "
     select '<18: removed dependency>', view, status, last_success_time, last_refresh_time, next_refresh_time from refreshes where view = 'b';
-    show create b;"
+    show create b;
+    drop table a;
+    drop table b;"
+
+# Can't use the same time unit multiple times.
+$CLICKHOUSE_CLIENT -nq "
+    create materialized view c refresh every 1 second 2 second (x Int64) engine Memory empty as select * from src; -- { clientError SYNTAX_ERROR }"
 
 # Select from a table that doesn't exist, get an exception.
 $CLICKHOUSE_CLIENT -nq "
-    drop table a;
-    drop table b;
     create materialized view c refresh every 1 second (x Int64) engine Memory empty as select * from src;
     drop table src;"
 while [ "`$CLICKHOUSE_CLIENT -nq "select exception == '' from refreshes -- $LINENO" | xargs`" != '0' ]
@@ -269,7 +273,7 @@ $CLICKHOUSE_CLIENT -nq "
 # Retries.
 $CLICKHOUSE_CLIENT -nq "
     create materialized view h2 refresh after 1 year settings refresh_retries = 10 (x Int64) engine Memory as select x*10 + throwIf(x % 2 == 0) as x from src;"
-$CLICKHOUSE_CLIENT -nq "system wait view h2;" 2>/dev/null && echo "SYSTEM WAIT VIEW failed to fail at $LINENO"
+$CLICKHOUSE_CLIENT -nq "system wait view h2; -- { serverError REFRESH_FAILED }"
 $CLICKHOUSE_CLIENT -nq "
     select '<31.5: will retry>', exception != '', retry > 0 from refreshes;
     create table src2 empty as src;
@@ -312,7 +316,7 @@ $CLICKHOUSE_CLIENT -nq "
     select '<35: append>', * from k order by x;"
 # ALTER to non-APPEND
 $CLICKHOUSE_CLIENT -nq "
-    alter table k modify refresh every 10 year;" 2>/dev/null || echo "ALTER from APPEND to non-APPEND failed, as expected"
+    alter table k modify refresh every 10 year; -- { serverError NOT_IMPLEMENTED }"
 $CLICKHOUSE_CLIENT -nq "
     drop table k;
     truncate table src;"
@@ -336,7 +340,7 @@ $CLICKHOUSE_CLIENT -nq "
 
 # Failing to create inner table.
 $CLICKHOUSE_CLIENT -nq "
-    create materialized view n refresh every 1 second (x Int64) engine MergeTree as select 1 as x from numbers(2);" 2>/dev/null || echo "creating MergeTree without ORDER BY failed, as expected"
+    create materialized view n refresh every 1 second (x Int64) engine MergeTree as select 1 as x from numbers(2); -- { serverError NUMBER_OF_ARGUMENTS_DOESNT_MATCH}"
 $CLICKHOUSE_CLIENT -nq "
     create materialized view n refresh every 1 second (x Int64) engine MergeTree order by x as select 1 as x from numbers(2);
     drop table n;"
