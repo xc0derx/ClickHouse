@@ -11,7 +11,6 @@
 #include "Server/PrometheusMetricsWriter.h"
 #include "StaticRequestHandler.h"
 #include "ReplicasStatusHandler.h"
-#include "FileRequestHandler.h"
 #include "InterserverIOHTTPHandler.h"
 #include "PrometheusRequestHandler.h"
 #include "WebUIRequestHandler.h"
@@ -69,11 +68,6 @@ static void addDefaultHandlersFactory(
     IServer & server,
     const Poco::Util::AbstractConfiguration & config,
     AsynchronousMetrics & async_metrics);
-static void addFileSystemHandlerFactory(
-    HTTPRequestHandlerFactoryMain & factory,
-    IServer & server,
-    const Poco::Util::AbstractConfiguration & config
-);
 
 static auto createPingHandlerFactory(IServer & server)
 {
@@ -199,14 +193,6 @@ static inline HTTPRequestHandlerFactoryPtr createInterserverHTTPHandlerFactory(I
     return factory;
 }
 
-static inline HTTPRequestHandlerFactoryPtr createFileSystemHTTPHandlerFactory(IServer & server, const Poco::Util::AbstractConfiguration & config, const std::string & name)
-{
-    auto factory = std::make_shared<HTTPRequestHandlerFactoryMain>(name);
-    addFileSystemHandlerFactory(*factory, server, config);
-
-    return factory;
-}
-
 HTTPRequestHandlerFactoryPtr createHandlerFactory(IServer & server, const Poco::Util::AbstractConfiguration & config, AsynchronousMetrics & async_metrics, const std::string & name)
 {
     if (name == "HTTPHandler-factory" || name == "HTTPSHandler-factory")
@@ -218,8 +204,6 @@ HTTPRequestHandlerFactoryPtr createHandlerFactory(IServer & server, const Poco::
         auto metrics_writer = std::make_shared<PrometheusMetricsWriter>(config, "prometheus", async_metrics);
         return createPrometheusMainHandlerFactory(server, config, metrics_writer, name);
     }
-    else if (name == "FilesHTTPHandler-factory")
-        return createFileSystemHTTPHandlerFactory(server, config, name);
 
     throw Exception(ErrorCodes::LOGICAL_ERROR, "Unknown HTTP handler factory name.");
 }
@@ -272,14 +256,6 @@ void addCommonDefaultHandlersFactory(HTTPRequestHandlerFactoryMain & factory, IS
     js_handler->attachNonStrictPath("/js/");
     js_handler->allowGetAndHeadRequest();
     factory.addHandler(js_handler);
-}
-
-void addFileSystemHandlerFactory(HTTPRequestHandlerFactoryMain & factory, IServer & server, const Poco::Util::AbstractConfiguration & config)
-{
-    auto files_handler = std::make_shared<HandlingRuleHTTPHandlerFactory<FileRequestHandler>>(server, config.getString("file_system.base_directory", "/"));
-    files_handler->attachNonStrictPath("/");
-    files_handler->allowGetAndHeadRequest();
-    factory.addHandler(files_handler);
 }
 
 void addDefaultHandlersFactory(
