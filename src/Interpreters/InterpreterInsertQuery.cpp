@@ -488,7 +488,7 @@ QueryPipeline InterpreterInsertQuery::buildInsertSelectPipeline(ASTInsertQuery &
     {
         auto select_query_options = SelectQueryOptions(QueryProcessingStage::Complete, 1);
 
-        if (settings.allow_experimental_analyzer)
+        if (settings.enable_analyzer)
         {
             InterpreterSelectQueryAnalyzer interpreter_select_analyzer(query.select, select_context, select_query_options);
             pipeline = interpreter_select_analyzer.buildQueryPipeline();
