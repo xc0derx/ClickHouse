@@ -36,11 +36,11 @@ def insert_data(table_name, row_num, all_nodes=False):
         n1.query(query)
 
 
-@pytest.mark.parametrize("custom_key", ["sipHash64(key)"])
+@pytest.mark.parametrize("custom_key", ["sipHash64(key)", "key"])
 @pytest.mark.parametrize("parallel_replicas_mode", ["custom_key_sampling"])
 @pytest.mark.parametrize(
     "cluster",
-    ["test_multiple_shards_multiple_replicas"],
+    ["test_multiple_shards_multiple_replicas", "test_single_shard_multiple_replicas"],
 )
 def test_parallel_replicas_custom_key_distributed(
     start_cluster, cluster, custom_key, parallel_replicas_mode

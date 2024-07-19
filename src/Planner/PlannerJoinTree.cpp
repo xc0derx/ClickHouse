@@ -847,8 +847,10 @@ JoinTreeQueryPlan buildQueryPlanForTableExpression(QueryTreeNodePtr table_expres
 
                 if (query_context->canUseParallelReplicasCustomKey())
                 {
+                    LOG_DEBUG(getLogger("Planner"), "We can use parallel replicas with custom key");
                     if (settings.parallel_replicas_count > 1)
                     {
+                        LOG_DEBUG(getLogger("Planner"), "Will add a filter");
                         auto parallel_replicas_custom_key_filter_info
                             = buildCustomKeyFilterIfNeeded(storage, table_expression_query_info, planner_context);
                         add_filter(parallel_replicas_custom_key_filter_info, "Parallel replicas custom key filter");
@@ -856,6 +858,7 @@ JoinTreeQueryPlan buildQueryPlanForTableExpression(QueryTreeNodePtr table_expres
                     else if (auto * distributed = typeid_cast<StorageDistributed *>(storage.get());
                              distributed && query_context->canUseParallelReplicasCustomKeyForCluster(*distributed->getCluster()))
                     {
+                        LOG_DEBUG(getLogger("Planner"), "We can use parallel replicas with custom key with distributed");
                         planner_context->getMutableQueryContext()->setSetting("distributed_group_by_no_merge", 2);
                         /// We disable prefer_localhost_replica because if one of the replicas is local it will create a single local plan
                         /// instead of executing the query with multiple replicas

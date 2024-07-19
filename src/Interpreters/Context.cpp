@@ -5540,11 +5540,6 @@ std::shared_ptr<AsyncReadCounters> Context::getAsyncReadCounters() const
     return async_read_counters;
 }
 
-ParallelReplicasMode Context::getParallelReplicasMode() const
-{
-    return settings->parallel_replicas_mode;
-}
-
 bool Context::canUseTaskBasedParallelReplicas() const
 {
     return settings->use_parallel_replicas > 0
@@ -5580,7 +5575,21 @@ bool Context::canUseParallelReplicasCustomKeyForCluster(const Cluster & cluster)
 
 bool Context::canUseOffsetParallelReplicas() const
 {
-    return offset_parallel_replicas_enabled && settings->max_parallel_replicas > 1 && getParallelReplicasMode() == ParallelReplicasMode::SAMPLING_KEY;
+    /**
+     * Offset parallel replicas algorithm is not only the one which relies on native SAMPLING KEY,
+     * but also those which rely on customer-provided "custom" key.
+     * We combine them together into one group for convinience.
+     */
+    const bool has_enough_servers = settings->max_parallel_replicas > 1;
+    const bool parallel_replicas_enabled = settings->use_parallel_replicas > 0;
+    const bool is_parallel_replicas_with_custom_key_or_native_sampling_key =
+        settings->parallel_replicas_mode == ParallelReplicasMode::SAMPLING_KEY ||
+        settings->parallel_replicas_mode == ParallelReplicasMode::CUSTOM_KEY_SAMPLING ||
+        settings->parallel_replicas_mode == ParallelReplicasMode::CUSTOM_KEY_RANGE;
+    return offset_parallel_replicas_enabled && 
+           has_enough_servers && 
+           parallel_replicas_enabled && 
+           is_parallel_replicas_with_custom_key_or_native_sampling_key;
 }
 
 void Context::disableOffsetParallelReplicas()
