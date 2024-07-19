@@ -37,9 +37,7 @@ def insert_data(table_name, row_num, all_nodes=False):
 
 
 @pytest.mark.parametrize("custom_key", ["sipHash64(key)"])
-@pytest.mark.parametrize(
-    "parallel_replicas_mode", ["custom_key_sampling"]
-)
+@pytest.mark.parametrize("parallel_replicas_mode", ["custom_key_sampling"])
 @pytest.mark.parametrize(
     "cluster",
     ["test_multiple_shards_multiple_replicas"],
@@ -103,7 +101,9 @@ def test_parallel_replicas_custom_key_distributed(
 
 
 @pytest.mark.parametrize("custom_key", ["sipHash64(key)", "key"])
-@pytest.mark.parametrize("parallel_replicas_mode", ["custom_key_sampling", "custom_key_range"])
+@pytest.mark.parametrize(
+    "parallel_replicas_mode", ["custom_key_sampling", "custom_key_range"]
+)
 @pytest.mark.parametrize(
     "cluster",
     ["test_single_shard_multiple_replicas"],
@@ -145,7 +145,9 @@ def test_parallel_replicas_custom_key_mergetree(
 
 
 @pytest.mark.parametrize("custom_key", ["sipHash64(key)", "key"])
-@pytest.mark.parametrize("parallel_replicas_mode", ["custom_key_sampling", "custom_key_range"])
+@pytest.mark.parametrize(
+    "parallel_replicas_mode", ["custom_key_sampling", "custom_key_range"]
+)
 @pytest.mark.parametrize(
     "cluster",
     ["test_single_shard_multiple_replicas"],
