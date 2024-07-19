@@ -496,12 +496,7 @@ FilterDAGInfo buildCustomKeyFilterIfNeeded(const StoragePtr & storage,
     const auto & query_context = planner_context->getQueryContext();
     const auto & settings = query_context->getSettingsRef();
 
-    const bool is_parallel_replicas_with_custom_key =
-        settings.parallel_replicas_mode == ParallelReplicasMode::CUSTOM_KEY_RANGE ||
-        settings.parallel_replicas_mode == ParallelReplicasMode::CUSTOM_KEY_SAMPLING;
-    const bool can_use_custom_key_parallel_replicas = settings.use_parallel_replicas > 0 && is_parallel_replicas_with_custom_key;
-
-    if (!can_use_custom_key_parallel_replicas || settings.parallel_replicas_count <= 1 || settings.parallel_replicas_custom_key.value.empty())
+    if (!query_context->canUseParallelReplicasCustomKey() || settings.parallel_replicas_count <= 1 || settings.parallel_replicas_custom_key.value.empty())
         return {};
 
     auto custom_key_ast = parseCustomKeyForTable(settings.parallel_replicas_custom_key, *query_context);
