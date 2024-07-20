@@ -5578,7 +5578,7 @@ bool Context::canUseOffsetParallelReplicas() const
     /**
      * Offset parallel replicas algorithm is not only the one which relies on native SAMPLING KEY,
      * but also those which rely on customer-provided "custom" key.
-     * We combine them together into one group for convinience.
+     * We combine them together into one group for convenience.
      */
     const bool has_enough_servers = settings->max_parallel_replicas > 1;
     const bool parallel_replicas_enabled = settings->use_parallel_replicas > 0;
@@ -5586,9 +5586,9 @@ bool Context::canUseOffsetParallelReplicas() const
         settings->parallel_replicas_mode == ParallelReplicasMode::SAMPLING_KEY ||
         settings->parallel_replicas_mode == ParallelReplicasMode::CUSTOM_KEY_SAMPLING ||
         settings->parallel_replicas_mode == ParallelReplicasMode::CUSTOM_KEY_RANGE;
-    return offset_parallel_replicas_enabled && 
-           has_enough_servers && 
-           parallel_replicas_enabled && 
+    return offset_parallel_replicas_enabled &&
+           has_enough_servers &&
+           parallel_replicas_enabled &&
            is_parallel_replicas_with_custom_key_or_native_sampling_key;
 }
 
