@@ -63,12 +63,6 @@ def parse_args() -> argparse.Namespace:
         "tag ('refs/tags/' is removed automatically) or a normal 22.2.2.2 format",
     )
     parser.add_argument(
-        "--sha",
-        type=str,
-        default="",
-        help="sha of the commit to use packages from",
-    )
-    parser.add_argument(
         "--release-type",
         type=str,
         choices=("auto", "latest", "major", "minor", "patch", "head"),
@@ -377,21 +371,6 @@ def main():
     direct_urls: Dict[str, List[str]] = {}
 
     for arch, build_name in zip(ARCH, ("package_release", "package_aarch64")):
-        if args.bucket_prefix:
-            assert not args.allow_build_reuse
-            repo_urls[arch] = f"{args.bucket_prefix}/{build_name}"
-        elif args.sha:
-            # CreateRelease workflow only. TODO
-            version = args.version
-            repo_urls[arch] = (
-                f"{S3_DOWNLOAD}/{S3_BUILDS_BUCKET}/"
-                f"{version.major}.{version.minor}/{args.sha}/{build_name}"
-            )
-        else:
-            # In all other cases urls must be fetched from build reports. TODO: script needs refactoring
-            repo_urls[arch] = ""
-            assert args.allow_build_reuse
-
         if args.allow_build_reuse:
             # read s3 urls from pre-downloaded build reports
             if "clickhouse-server" in image_repo:
@@ -413,6 +392,17 @@ def main():
                 for url in urls
                 if any(package in url for package in PACKAGES) and "-dbg" not in url
             ]
+        elif args.bucket_prefix:
+            assert not args.allow_build_reuse
+            repo_urls[arch] = f"{args.bucket_prefix}/{build_name}"
+            print(f"Bucket prefix is set: Fetching packages from [{repo_urls}]")
+        else:
+            version = args.version
+            repo_urls[arch] = (
+                f"{S3_DOWNLOAD}/{S3_BUILDS_BUCKET}/"
+                f"{version.major}.{version.minor}/{git.sha}/{build_name}"
+            )
+            print(f"Fetching packages from [{repo_urls}]")
 
     if push:
         docker_login()
