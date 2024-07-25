@@ -264,7 +264,8 @@ def main():
                 if status.context != CI.StatusNames.SYNC:
                     has_native_failed_status = True
 
-        if GHActions.is_workflow_successful() or has_failed_statuses:
+        workflow_ok = GHActions.is_workflow_successful()
+        if workflow_ok or has_failed_statuses:
             # set Mergeable Check if workflow is successful (green)
             # or if we have GH statuses with failures (red)
             #    to avoid false-green on a died runner
@@ -284,7 +285,7 @@ def main():
             print(
                 "Workflow failed but no failed statuses found (died runner?) - cannot set Mergeable Check status"
             )
-        if args.wf_status == SUCCESS and not has_native_failed_status:
+        if workflow_ok and not has_native_failed_status:
             sys.exit(0)
         else:
             sys.exit(1)
