@@ -91,6 +91,7 @@ class GHActions:
         FAILURE = "failure"
         PENDING = "pending"
         SUCCESS = "success"
+        SKIPPED = "skipped"
 
     @classmethod
     def _get_workflow_results(cls):
@@ -115,6 +116,33 @@ class GHActions:
         res = cls._get_workflow_results()
         results = [f"{job}: {data['result']}" for job, data in res.items()]
         cls.print_in_group("Workflow results", results)
+
+    @classmethod
+    def is_workflow_successful(cls) -> bool:
+        res = cls._get_workflow_results()
+        if not res:
+            print("ERROR: no workflow results found")
+            return False
+        for workflow_job, workflow_data in res.items():
+            status = workflow_data["result"]
+            if status in (
+                GHActions.ActionStatuses.SUCCESS,
+                GHActions.ActionStatuses.SKIPPED,
+            ):
+                print(f"Workflow status for [{workflow_job}] is [{status}] - continue")
+            elif status in (GHActions.ActionStatuses.FAILURE,):
+                if workflow_job in (
+                    "Tests_2",
+                    "Tests_3",
+                ):
+                    print(
+                        f"Failed Workflow status for [{workflow_job}], it's not required - continue"
+                    )
+                    continue
+
+                print(f"Failed Workflow status for [{workflow_job}]")
+                return False
+        return True
 
     @classmethod
     def get_workflow_job_result(cls, wf_job_name: str) -> Optional[str]:

@@ -23,10 +23,11 @@ from commit_status_helper import (
 from get_robot_token import get_best_robot_token
 from github_helper import GitHub, NamedUser, PullRequest, Repository
 from pr_info import PRInfo
-from report import SUCCESS, FAILURE
+from report import SUCCESS
 from env_helper import GITHUB_UPSTREAM_REPOSITORY, GITHUB_REPOSITORY
 from synchronizer_utils import SYNC_BRANCH_PREFIX
 from ci_config import CI
+from ci_utils import GHActions
 
 # The team name for accepted approvals
 TEAM_NAME = getenv("GITHUB_TEAM_NAME", "core")
@@ -248,8 +249,8 @@ def main():
     repo = gh.get_repo(args.repo)
 
     if args.set_ci_status:
+        GHActions.print_workflow_results()
         # set Mergeable check status and exit
-        assert args.wf_status in (FAILURE, SUCCESS)
         commit = get_commit(gh, args.pr_info.sha)
         statuses = get_commit_filtered_statuses(commit)
 
@@ -263,8 +264,8 @@ def main():
                 if status.context != CI.StatusNames.SYNC:
                     has_native_failed_status = True
 
-        if args.wf_status == SUCCESS or has_failed_statuses:
-            # set Mergeable check if workflow is successful (green)
+        if GHActions.is_workflow_successful() or has_failed_statuses:
+            # set Mergeable Check if workflow is successful (green)
             # or if we have GH statuses with failures (red)
             #    to avoid false-green on a died runner
             state = trigger_mergeable_check(

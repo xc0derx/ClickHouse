@@ -133,6 +133,7 @@ jobs:
           cd "$GITHUB_WORKSPACE/tests/ci"
           python3 finish_check.py --wf-status ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
       - name: Check Workflow results
+        if: ${{ !cancelled() }}
         run: |
           export WORKFLOW_RESULT_FILE="/tmp/workflow_results.json"
           cat > "$WORKFLOW_RESULT_FILE" << 'EOF'
